@@ -31,8 +31,6 @@ lantiq_setup_interfaces()
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz3390|\
-	avm,fritz3490|\
-	avm,fritz3490-micron|\
 	avm,fritz7360sl|\
 	avm,fritz7360-v2|\
 	avm,fritz7362sl|\
@@ -42,6 +40,8 @@ lantiq_setup_interfaces()
 	tplink,vr200v)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
 	avm,fritz7490|\
 	avm,fritz7490-micron)
                 ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan-wasp"
