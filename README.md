@@ -1,30 +1,29 @@
-This branch is only for building openwrt for the Fritzbox 7490 with WiFi support
+This branch is only for building openwrt for the Fritzbox 7490 and 3490 with WiFi support
 # Quickstart
 Build the Lantiq image
 
 ```
-# Download and update the sources
-git clone https://github.com/Zappception/openwrt
-cd openwrt
-git pull
- 
 # Select a specific code revision
 git branch -a
 git tag
-git checkout openwrt-24.10-fritz.box.7490
- 
+git checkout openwrt-24.10.4-fritz.box.7490
+# or
+git checkout openwrt-24.10.4-fritz.box.3490
+
 # Update the feeds
 ./scripts/feeds update -a
 ./scripts/feeds install -a
- 
+
 # Configure the firmware image
 make menuconfig
 
 # Select following:
 # Target System (Lantiq)
 # Subtarget (XRX200)
-# Target Profile (AVM FRITZ!Box 7490 Micron NAND) or Target Profile (AVM FRITZ!Box 7490 Other NAND)
+# Target Profile (AVM FRITZ!Box 7490 Micron NAND) or (AVM FRITZ!Box 7490 Other NAND)
+# or (AVM FRITZ!Box 3490 Micron NAND) or (AVM FRITZ!Box 3490 Other NAND)
 # See: https://openwrt.org/toh/avm/fritz.box.7490#installation
+# or   https://openwrt.org/toh/avm/fritz.box.3490#installation
 
 # Select LuCI --> Collections ---> luci
 # Select whatever you need
@@ -96,14 +95,16 @@ Reflash the Lantiq image
 
 Configure your Local Startup on the Lantiq to boot the WASP image and configure the WiFi. The WASP image is only running in RAM, because the SoC has no flash.
 Change, add and remove the uci commands inside the ssh block to your liking.
-The avm_wasp driver usually gets loaded before the lan-wasp link is up, so the driver has to be restarted
-    
+The avm_wasp driver usually gets loaded before the lan-wasp link is up, so the driver has to be restarted.
+After 60 ping attempts without success the kernel module gets reloaded.
+
 ```
 ok=0
 while true; do
   if ip link show lan-wasp | grep -q "state UP"; then
     ok=$(($ok+1))
   else
+    ip link set lan-wasp master br-lan up
     ok=0
   fi
 
@@ -120,16 +121,24 @@ fi
 sleep 1
 modprobe avm_wasp
 
+no_pong_count=0
 while true; do
   if ping -c1 -W1 192.168.1.2 2>&1 >/dev/null; then
     ok=$(($ok+1))
+    no_pong_count=0
     sleep 1
   else
     ok=0
+    no_pong_count=$(($no_pong_count+1))
   fi
 
   if [ $ok -ge 10 ]; then
     break
+  fi
+
+  if [ $no_pong_count -ge 60 ]; then
+      no_pong_count=0
+      rmmod avm_wasp && modprobe avm_wasp
   fi
 done
 
@@ -193,7 +202,7 @@ image usable to migrate from a vendor stock firmware to OpenWrt, try the
 If your device is supported, please follow the **Info** link to see install
 instructions or consult the support resources listed below.
 
-## 
+##
 
 An advanced user may require additional or specific package. (Toolchain, SDK, ...) For everything else than simple firmware download, try the wiki download page:
 
